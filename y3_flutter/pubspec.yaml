@@ -7,8 +7,11 @@ environment:
   sdk: ^3.11.3
 
 dependencies:
+  audio_session: ^0.2.3
   flutter:
     sdk: flutter
+  just_audio: ^0.10.5
+  record: ^6.2.0
 
 dev_dependencies:
   flutter_test:
