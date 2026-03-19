@@ -1,76 +1,73 @@
 import 'package:audio_session/audio_session.dart';
-import 'package:just_audio/just_audio.dart';
-import 'package:record/record.dart';
+import 'package:flutter_sound/flutter_sound.dart';
 import 'package:flutter/material.dart';
-import 'dart:math';
+import 'package:permission_handler/permission_handler.dart';
 
 final sampleRate = 16000;
-final pi = 3.1415926;
+final codec = Codec.pcm16;
 
-// playback array
-var bytes = List<int>.filled(48000, 0);
-void fillBuffer() {
-  for (var i = 0; i < 48000; i++) {
-    bytes[i] = ((sin(2 * pi * i / 48000)) * 32000).toInt();
-  }
+const source = AudioSource.microphone;
+final player = FlutterSoundPlayer();
+final recorder = FlutterSoundRecorder();
+
+Future<void> setupRecorder() async {
+  await Permission.microphone.request();
+  // in the future we may want to set isBGService to true
+  await recorder.openRecorder();
+  // we may not need this part
+  await recorder.setSubscriptionDuration(const Duration(milliseconds: 10));
 }
 
-final player = AudioPlayer();
-final recorder = AudioRecorder();
-final recordConfig = RecordConfig(
-  encoder: AudioEncoder.pcm16bits,
-  sampleRate: sampleRate,
-  numChannels: 1,
-  autoGain: false,
-  echoCancel: false,
-  noiseSuppress: false,
-  streamBufferSize: 1024,
-);
-
-class audioBuffer extends StreamAudioSource {
-  final List<int> bytes;
-  audioBuffer(this.bytes);
-
-  @override
-  Future<StreamAudioResponse> request([int? start, int? end]) async {
-    start ??= 0;
-    end ??= bytes.length;
-    return StreamAudioResponse(
-      sourceLength: bytes.length,
-      contentLength: end - start,
-      offset: start,
-      stream: Stream.value(bytes.sublist(start, end)),
-      contentType: 'audio/mpeg',
-    );
-  }
-}
-
-Future<void> initAudio() async {
-  final session = await AudioSession.instance;
-  // 'speech' is ideal for constant playback such as audiobooks or podcasts
-  // only other option is 'music'
-  await session.configure(const AudioSessionConfiguration.speech());
-  // listen and report errors from player
-  player.errorStream.listen((e) {
-    print("stream error $e");
-  });
+Future<void> setupPlayer() async {
+  await player.openPlayer();
 }
 
 void startPlayback() async {
-  fillBuffer();
-  await player.setAudioSource(audioBuffer(bytes));
-  player.play();
+  await setupSession();
+  await setupRecorder();
+  await setupPlayer();
+  await player.startPlayerFromStream(
+    codec: codec,
+    sampleRate: sampleRate,
+    interleaved: false,
+    bufferSize: 1024,
+    numChannels: 1,
+  );
+
+  await recorder.startRecorder(
+    codec: codec,
+    audioSource: source,
+    toStreamInt16: player.int16Sink,
+    sampleRate: sampleRate,
+    numChannels: 1,
+    enableNoiseSuppression: false,
+    enableVoiceProcessing: false,
+    enableEchoCancellation: false,
+  );
 }
 
-void startRecording() async {
-  if (!await recorder.hasPermission()) {
-    print("No microphone! Denied!");
-  }
-  final stream = await recorder.startStream(recordConfig);
-  stream.listen((audioChunk) {
-    print("audioChunk length:            ${audioChunk.length}");
-    print("audioConfig streamBufferSize: ${recordConfig.streamBufferSize}");
-  });
+Future<void> setupSession() async {
+  final session = await AudioSession.instance;
+  // i HATE this
+  await session.configure(
+    AudioSessionConfiguration(
+      avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+      avAudioSessionCategoryOptions:
+          AVAudioSessionCategoryOptions.allowBluetooth |
+          AVAudioSessionCategoryOptions.defaultToSpeaker,
+      avAudioSessionMode: AVAudioSessionMode.spokenAudio,
+      avAudioSessionRouteSharingPolicy:
+          AVAudioSessionRouteSharingPolicy.defaultPolicy,
+      avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
+      androidAudioAttributes: const AndroidAudioAttributes(
+        contentType: AndroidAudioContentType.speech,
+        flags: AndroidAudioFlags.none,
+        usage: AndroidAudioUsage.voiceCommunication,
+      ),
+      androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+      androidWillPauseWhenDucked: true,
+    ),
+  );
 }
 
 void main() {
