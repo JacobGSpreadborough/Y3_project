@@ -1,6 +1,23 @@
+----- 18/03/2026 -----
+
 'record' - can record to buffer, which is comically slow with a basic
 implementation, haven't tried too hard to make it faster yet
 448k downloads on pub.dev
 
 'flutter_soloud' - can easily play audio from a buffer
 42.6k downloads on pub.dev
+
+----- 19/03/2026 -----
+
+'just_audio' - 688k downloads, offers streaming, trying it out today
+Can stream audio from a buffer
+No recording functionality
+need 'audio_session' as well
+as far as I can tell there is no control over sample rate?? wtf!!
+
+looking into speeding up 'record' callback when using stream.listen -currently runs every 200ms, we need 10ms
+could write 10ms at a time to output buffer
+
+
+'flutter_sound' - 64.5k downloads, supports record to buffer and playback from buffer
+can play from mic to speaker but has high latency
