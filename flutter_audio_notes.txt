@@ -1,0 +1,6 @@
+'record' - can record to buffer, which is comically slow with a basic
+implementation, haven't tried too hard to make it faster yet
+448k downloads on pub.dev
+
+'flutter_soloud' - can easily play audio from a buffer
+42.6k downloads on pub.dev
