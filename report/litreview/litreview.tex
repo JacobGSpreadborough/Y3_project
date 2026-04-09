@@ -1,3 +1,4 @@
+%! TEX root = ../main.tex
 \section{Literature Review}
 
 
@@ -27,13 +28,13 @@ This was closely followed by the release of Google's Flutter in 2017 \cite{Flutt
 \begin{figure}
     \centering
     \includegraphics[width=0.5\linewidth]{litreview/images/cross_platform_trends.png}
-    \caption{Search interest over time (data from \cite{google trends})}
+    \caption{Search interest over time (data from \cite{Google-Trends})}
     \label{fig:trends}
 \end{figure}
 
 \subsection{Cross-Platform Approach Comparison}
 
-To deal with the problem of needing to develop applications for multiple different platforms, Heitkötter, Hanschke, and Majchrzak \cite{Heitkotter 2012} define three kinds of approaches: Web-based development, native development, and cross-platform approaches. A brief summary of each follows.
+To deal with the problem of needing to develop applications for multiple different platforms, Heitkötter, Hanschke, and Majchrzak \cite{Heitkotter2012} define three kinds of approaches: Web-based development, native development, and cross-platform approaches. A brief summary of each follows.
 
 \begin{itemize}
     \item \textit{Web development}: Applications are developed as browser apps, which are then accessed via the device's browser application
@@ -43,7 +44,7 @@ To deal with the problem of needing to develop applications for multiple differe
 
 For this paper, we will be focusing on cross-platform approaches, with an emphasis on the process of writing one codebase that can be used to develop for different platforms.
 
-It is important to define the criteria that will be used to evaluate cross-platform approaches, so that qualitative and quantitative observations and comparisons can be made. Jošt and Taneski \cite{Jost 2025} utilise data from developer surveys, community engagement and usage, and job market research, along with data from Google Trends to provide a numerical comparison of different approaches. This view of market and developer trends is useful as it can help developers choose a framework based on its current support and community, or its value in the job market.  Heitkötter, Hanschke, and Majchrzak based their evaluation on two sets of criteria one based on infrastructure, and one on development experience \cite{Heitkotter 2012}. The infrastructure criteria involve the features offered by the approach, the community and support available, and the potential quality of the apps that can be built with it. The development criteria focuses on the development environment, learning process, and development features such as graphical UI editors and simulators. Based on these examples, and independent research, the following criteria will be used to evaluate cross-platform approaches.
+It is important to define the criteria that will be used to evaluate cross-platform approaches, so that qualitative and quantitative observations and comparisons can be made. Jošt and Taneski \cite{Jost2025} utilise data from developer surveys, community engagement and usage, and job market research, along with data from Google Trends to provide a numerical comparison of different approaches. This view of market and developer trends is useful as it can help developers choose a framework based on its current support and community, or its value in the job market.  Heitkötter, Hanschke, and Majchrzak based their evaluation on two sets of criteria one based on infrastructure, and one on development experience \cite{Heitkotter2012}. The infrastructure criteria involve the features offered by the approach, the community and support available, and the potential quality of the apps that can be built with it. The development criteria focuses on the development environment, learning process, and development features such as graphical UI editors and simulators. Based on these examples, and independent research, the following criteria will be used to evaluate cross-platform approaches.
 
 \begin{itemize}
     \item \textbf{Community and Support}: How `popular' is the app? Are there resources beyond the framework's documentation? Are there third party libraries and extensions available?
@@ -56,7 +57,7 @@ These criteria will be used to evaluate and compare the development frameworks t
 
 \subsection{Audio Applications}
 
-While there is a wealth of research done on the benefits, limitations, and options regarding cross-platform mobile development, there is a lack of information regarding audio development in this field. While audio processing is mentioned in some papers as an example of a complex real-time process that could require native code to reach performance requirements, there is no focus on the current tools and techniques for cross-platform audio development \cite{Patil 2025}. This is certainly an area in need of improvement, as mobile devices have become one of the most popular mode of listening to music, podcasts, audiobooks etc., along with becoming tools capable of complex audio recording and editing tasks.
+While there is a wealth of research done on the benefits, limitations, and options regarding cross-platform mobile development, there is a lack of information regarding audio development in this field. While audio processing is mentioned in some papers as an example of a complex real-time process that could require native code to reach performance requirements, there is no focus on the current tools and techniques for cross-platform audio development \cite{Patil2025}. This is certainly an area in need of improvement, as mobile devices have become one of the most popular mode of listening to music, podcasts, audiobooks etc., along with becoming tools capable of complex audio recording and editing tasks.
 
 % ----- IOS AUDIO DESCRIPTION ----- %
 
@@ -71,7 +72,7 @@ When developing audio applications for iOS, the immediately available solution i
 
 % ----- ANDROID AUDIO DESCRIPTION ----- %
 
-Android audio development is similar to that of iOS, in that a build in library (android.media) is immediately available to the developer \cite{android.media}. The user may only need to declare \codeword{MediaPlayer} and \codeword{MediaRecorder} objects for playback and recording, respectively. The \codeword{android.media} library does provide some basic audio effects, such as equalization and reverb. In the documentation for these effects it is recommended that developers use the premade effect classes rather than implementing their own using the \codeword{AudioEffect} class. Since Android apps are written in Java or Kotlin, and the underlying code that accesses hardware is written in C++, a JNI is necessary to access the device's hardware abstraction layer (HAL), as seen in fig. \ref{fig:android audio}\cite{android audio}. These layers of abstraction create latency and make the default audio api unsuitable for real-time processing \cite{Balsini 2019}. 
+Android audio development is similar to that of iOS, in that a build in library (android.media) is immediately available to the developer \cite{android.media}. The user may only need to declare \codeword{MediaPlayer} and \codeword{MediaRecorder} objects for playback and recording, respectively. The \codeword{android.media} library does provide some basic audio effects, such as equalization and reverb. In the documentation for these effects it is recommended that developers use the premade effect classes rather than implementing their own using the \codeword{AudioEffect} class. Since Android apps are written in Java or Kotlin, and the underlying code that accesses hardware is written in C++, a JNI is necessary to access the device's hardware abstraction layer (HAL), as seen in fig. \ref{fig:android audio}\cite{AndroidAudio}. These layers of abstraction create latency and make the default audio api unsuitable for real-time processing \cite{Balsini2019}. 
 
 % ----- CROSS PLATFORM AUDIO DESCRIPTION ----- %
 
@@ -81,7 +82,7 @@ When using a cross platform approach, it is obviously much more difficult to hav
 \begin{figure}
     \centering
     \includegraphics[width=0.5\linewidth]{litreview/images/ape_fwk_audio.png}
-    \caption{Android audio architecture (via \cite{android audio})}
+    \caption{Android audio architecture (via \cite{AndroidAudio})}
     \label{fig:android audio}
 \end{figure}
 

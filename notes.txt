@@ -21,3 +21,8 @@ could write 10ms at a time to output buffer
 
 'flutter_sound' - 64.5k downloads, supports record to buffer and playback from buffer
 can play from mic to speaker but has high latency
+
+
+----- 09/04/2026 -----
+
+

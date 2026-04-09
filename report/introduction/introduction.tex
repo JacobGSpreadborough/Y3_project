@@ -6,4 +6,21 @@ Since their inception, mobile phones have become more and more ubiquitous, becom
 
 Mobile devices are involved in almost every aspect of every day life, and have evolved to handle a huge range of tasks. Among these, audio is one of the most important, as it is required for the communication and entertainment capabilities of mobile devices. 
 
-Mobile audio development is constrained mainly by two factors: the speed and quality required for audio processing, and the size and power constraints of a small device with limited battery life. These contstraints are made ever more challenging when attempting to build a single application for multiple mobile phone types, as the methods of controlling audio often involve low level concepts to meet the requirements of the aforementioned factors
+Mobile audio development is constrained mainly by two factors: the speed and quality required for audio processing, and the size and power constraints of a small device with limited battery life. These contstraints are made ever more challenging when attempting to build a single application for multiple mobile phone types, as the methods of controlling audio often involve low level concepts to meet the requirements of the aforementioned factors.
+
+When discussing cross-platform development, the platforms being developed for must be established. In mobile devices, the primary options are Android and iOS \cite{Chandrashekar2021}, with others such as Samsung and Windows falling behind \cite{OS-market-shares}. In this project, the focus will be on development for Android and iOS devices, as together they account for over 90\% of mobile devices in use. 
+%TODO: need a better word than 'company'
+If companies want their apps to be able to reach as many users as possible, then they must develop them for both Android and iOS devices. 
+To meet the need to create apps for multiple mobile operating systems, while keeping the cost of development low, then an approach is needed that allows for the development of a single codebase that will create similar apps for the different operating systems. 
+
+\begin{figure}[hbtp]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{introduction/figures/global_cellphones.png}
+	\end{center}
+	\caption{Global cellphone usage from 2019-2029. Data and graphic from \cite{global-cellphones}.}\label{fig:global_cellphones}
+\end{figure}
+
+Despite the ubiquity of mobile devices, and the specific challenges posed by audio development, there is little information in the literature on how a developer should approach this specific problem.
+This project serves to provide an outline a comprehensive evaluation and comparision of the tools available for cross-platform audio development, and to provide recommendations for developers based on their specific situation.
+
+
