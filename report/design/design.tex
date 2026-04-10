@@ -1,13 +1,23 @@
 %! TEX root = ../main.tex
-\section{Design}
+\newpage
+\section{Design} \label{design}
 
+%FIX: PLACEHOLDER
+The design of the sample apps' audio processing will be implemened using the best practices for audio processing design [CITE].
 
+Specifically, a circular buffer will be used to read data from the microphone, process it, and write it to the speaker. Audio will be stored using 16-bit PCM encoding. Audio will be stored using 32-bit floating point encoding. Audio will be processed in 10 millisecond chunks, with a sampling rate of 48 kilohertz. 
 
-\subsection{Framework Evaluation Criteria}
+\subsection{Evaluation}
 
-A set of criteria has been developed to evaluate and compare these approaches.
+Two sets of criteria have been developed to evaluate and compare React Native and Flutter, and the audio that they can produce.
+The framework criteria involves the infrastructure, development experience, and capabilities of each framework as seen in table \ref{tab:frameworks}.
+For audio, objective criteria will be used to measure latency and STOI scores, along with subjective feedback from test subjects as seen in table \ref{tab:audio criteria}.
+The frameworks will also be evaluated using some objective statistics, specifically data from the 2025 StackOverflow Developer Survey \cite{stackoverflow_technology}.
+These statistics will be taken into account as part of the 'Community and Support Criteria.
 
-\begin{table}
+\subsubsection{Framework Criteria}
+
+\begin{table}[htbp]
 	\caption{Criteria for framework evaluation}\label{tab:frameworks}
 	\begin{center}
 		\begin{tabular}[c]{|p{0.4\linewidth}|p{0.6\linewidth}|}
@@ -29,10 +39,12 @@ A set of criteria has been developed to evaluate and compare these approaches.
 	\end{center}
 \end{table}
 
+The data taken from the 2025 StackOverflow Developer Survey gives some insight into the prevalence of different frameworks and the programming languages that they use, and in turn the amount of support a developer can expect to find on StackOverflow.
+The question tag system on StackOverflow is also used to determine how many questions are being asked regarding each framework and its associated language.
 
-\subsection{Audio Evaluation Criteria}
+\subsubsection{Audio Criteria}
 
-\begin{table}
+\begin{table}[htbp]
 	\caption{Criteria for audio evaluation}\label{tab:audio criteria}
 	\begin{center}
 		\begin{tabular}[c]{|p{0.4\linewidth}|p{0.6\linewidth}|}
@@ -50,3 +62,10 @@ A set of criteria has been developed to evaluate and compare these approaches.
 	\end{center}
 \end{table}
 
+Audio quality will be objectively evaluated by measuring live processing latency and intelligibility.
+Latency can be simply measured by sending an impulse as an input, and measuring the time it takes for that impulse to be processed and played back.
+This process will be repeated multiple times and the results will be averaged. 
+Non-live audio latency will be measured by measuring the time taken to process an audio file, taking into account the size of the audio file and any other settings regarding processing, e.g. sampling rate, and bit depth.
+Both of these measurements can be performed in the app's code, and could be used as a feature to provide information to the user.
+
+STOI 

@@ -25,4 +25,12 @@ can play from mic to speaker but has high latency
 
 ----- 09/04/2026 -----
 
+Criteria and Evaluation:
+	Heitkotter et. al. use 2 tables of criteria for infrastructure and development, and rate each table entry from 1 to 6 for each framework. 1 being best and 6 being worst. I'll just to 1 to 10 with 10 being the best. This way I can also use some of the empirical data from stackoverflow and the audio criteria to create a score for each framework
 
+Moved some stuff from the lit. review to the design section, started the summary thing in the intro
+
+----- 10/04/2026 -----
+
+Not going to use the stackoverflow data for an objective measure score kind of thing, just gonna use it to support other claims
+Reading papers to copy the introduction format 'section 1 covers this, in section 2 we do this blah blah blah.

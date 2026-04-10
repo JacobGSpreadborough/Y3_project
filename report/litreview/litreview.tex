@@ -1,6 +1,5 @@
 %! TEX root = ../main.tex
-\section{Literature Review}
-
+\section{Literature Review} \label{literature_review}
 
 `Cross-platform mobile development' refers to the practice of creating applications that will run on a mobile phone regardless of its operating system. This term is often used in contrast to `native' apps, which are built for only one operating system, using the development resources provided by that system. Native apps have the benefit of having a unified look and feel that is created by platform-specific UI and design principles \cite{Apple-HGI, Android-Developers}. The challenge of cross-platform development is creating a method to write one codebase that can be used to create native-passing apps for multiple platforms, instead of having to write separate native apps using different languages and frameworks. 
 
@@ -44,16 +43,7 @@ To deal with the problem of needing to develop applications for multiple differe
 
 For this paper, we will be focusing on cross-platform approaches, with an emphasis on the process of writing one codebase that can be used to develop for different platforms.
 
-It is important to define the criteria that will be used to evaluate cross-platform approaches, so that qualitative and quantitative observations and comparisons can be made. Jošt and Taneski \cite{Jost2025} utilise data from developer surveys, community engagement and usage, and job market research, along with data from Google Trends to provide a numerical comparison of different approaches. This view of market and developer trends is useful as it can help developers choose a framework based on its current support and community, or its value in the job market.  Heitkötter, Hanschke, and Majchrzak based their evaluation on two sets of criteria one based on infrastructure, and one on development experience \cite{Heitkotter2012}. The infrastructure criteria involve the features offered by the approach, the community and support available, and the potential quality of the apps that can be built with it. The development criteria focuses on the development environment, learning process, and development features such as graphical UI editors and simulators. Based on these examples, and independent research, the following criteria will be used to evaluate cross-platform approaches.
-
-\begin{itemize}
-    \item \textbf{Community and Support}: How `popular' is the app? Are there resources beyond the framework's documentation? Are there third party libraries and extensions available?
-    \item \textbf{Framework Features}: The features the framework can produce in apps, e.g. native UI components, access to device-specific hardware such as the camera
-    \item \textbf{Learning Curve}: The amount of new knowledge a developer must acquire to use this framework, and the extend to which that knowledge can be used in other contexts
-    \item \textbf{Environment Features}: Features available during development, such as graphical UI editing, testing on simulators and real devices, third-party package management etc.
-\end{itemize}
-
-These criteria will be used to evaluate and compare the development frameworks themselves. Further criteria will be developed to evaluate the audio-specific results of different frameworks. For the `Community and Support' criteria, data will be gathered from \url{stackoverflow.com} regarding how many questions are being asked and answered online about each approach. 
+It is important to define the criteria that will be used to evaluate cross-platform approaches, so that qualitative and quantitative observations and comparisons can be made. Jošt and Taneski \cite{Jost2025} utilise data from developer surveys, community engagement and usage, and job market research, along with data from Google Trends to provide a numerical comparison of different approaches. This view of market and developer trends is useful as it can help developers choose a framework based on its current support and community, or its value in the job market.  Heitkötter, Hanschke, and Majchrzak based their evaluation on two sets of criteria one based on infrastructure, and one on development experience \cite{Heitkotter2012}. The infrastructure criteria involve the features offered by the approach, the community and support available, and the potential quality of the apps that can be built with it. The development criteria focuses on the development environment, learning process, and development features such as graphical UI editors and simulators. These criteria and approaches are used in Section \ref{design} to develop a set of criteria to evaluate React Native and Flutter, and the audio that their apps produce.
 
 \subsection{Audio Applications}
 
@@ -63,9 +53,9 @@ While there is a wealth of research done on the benefits, limitations, and optio
 
 When developing audio applications for iOS, the immediately available solution is AVFAudio \cite{AVFAudio}. This is Apple's built in audio library for playing, recording, and processing audio. In a simple application, such as a music player app, a developer may only need to declare an \codeword{AVAudioPlayer} object and pass it an audio file to begin playback. These high level objects offer a comfortable level of abstraction from the underlying audio graph, while still providing adequate control for simple applications. If the application calls for more advanced control, such as live processing or synthesis, AVFAudio provides access to the audio graph via the \codeword{AVAudioEngine}. The audio graph is a sequence of connected 'nodes' that take audio input, process it, and render it to an output. The developer can create nodes in this graph that synthesise and process audio. Real-time processing and effects need to be done as efficiently as possible, so they are written as C++ classes, with an Objective-C adapter class to allow the app's Swift code to communicate with them \cite{AVFAudioEffects}. High level third-party libraries are also available for developers. The free and open-source AudioKit project provides the same recording, playback, and processing capabilities as AVFAudio, but with many more effects and functionalities built in \cite{AudioKit}. AudioKit works by wrapping AVFAudio objects in a layer of abstraction, making it easier to build a complex audio graph, providing many useful effect and processing nodes so that the user does not need to create them from scratch. AudioKit also offers a graphical extension for that allows the user to create their processing chain with minimal code \cite{AudioKitFlow}. AudioKit objects do provide access to the underlying AVAudioNodes that they are build with.
 
-\begin{figure}
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.5\linewidth]{litreview/images/AVFAudio.png}
+    \includegraphics[width=0.9\linewidth]{litreview/images/AVFAudio.png}
     \caption{High level (top) and low level (bottom) audio control with AVFAudio}
     \label{fig:AVFAudio}
 \end{figure}

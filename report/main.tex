@@ -10,7 +10,7 @@
 
 \usepackage[pdftex]{graphicx} % Required for including pictures
 \usepackage[english]{babel} % english motherfucker do you speak it?
-\usepackage[pdftex,linkcolor=black,pdfborder={0 0 0}]{hyperref} % Format links for pdf
+\usepackage[pdftex,linkcolor=blue,pdfborder={0 0 0}]{hyperref} % Format links for pdf
 \usepackage{calc} % To reset the counter in the document after title page
 \usepackage{enumitem} % Includes lists
 \usepackage{xcolor}
@@ -66,7 +66,7 @@ pdfauthor = {}
 
 \begin{center}
 % Yes part of the page
-\includegraphics[width=0.5\textwidth]{images/uoy_stacked_shield.png}\\[1cm]    
+\includegraphics[width=0.75\textwidth]{uoy_stacked_shield.png}\\[1cm]    
 
 %\textsf{\Large Submitted 5 August, 1984\\[0.2cm] for the degree of Doctor of Philosophy}\\[0.3cm]
 
@@ -86,35 +86,29 @@ pdfauthor = {}
 \input{"./introduction/introduction.tex"}
 
 \newpage
-\input{"litreview/litreview"}
+\input{"./litreview/litreview"}
 
-\section{Aims and Objectives}
-
-\subsection{Aims}
-
-\subsection{Objectives}
+\newpage
+\input{"./aims_and_objectives/aims_and_objectives.tex"}
 
 \newpage
 \input{"design/design"}
 
-The design of the sample apps' audio processing will be implemented using the best practices for audio processing design [CITE].
+\newpage
+\input{"./implementation/implementation.tex"}
 
-Specifically, a circular buffer will be used to read data from the microphone, process it, and write it to the speaker. Audio will be stored using 16-bit PCM encoding. Audio will be stored using 32-bit floating point encoding. Audio will be processed in 10 millisecond chunks, with a sampling rate of 48 kilohertz. 
+\newpage
+\input{"./testing/testing.tex"}
 
-\section{Implementation}
+\newpage
+\input{"./eval_and_further_work/eval_and_further_work.tex"}
 
-\section{Testing}
-
-\section{Evaluation and Further Work}
-
-\subsection{Evaluation}
-
-\subsection{Further Work}
-
-\section{Recommendation}
+\newpage
+\input{"./recommendation/recommendation.tex"}
 
 \appendix
 
+\newpage
 \section{References}
 \bibliographystyle{unsrt}
 \bibliography{references}
