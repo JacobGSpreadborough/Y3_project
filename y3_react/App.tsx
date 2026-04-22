@@ -1,5 +1,5 @@
 // App.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Button, Text, useColorScheme, Pressable } from 'react-native';
 import { AudioContext, AudioRecorder, AudioManager, FileFormat, AudioBuffer } from 'react-native-audio-api';
 import SampleTurboModule from './specs/NativeSampleModule';
@@ -10,29 +10,35 @@ const SAMPLE_RATE = 48_000;
 AudioManager.setAudioSessionOptions({
   iosCategory: 'playAndRecord',
   iosMode: 'default',
-  iosOptions: [],
+  iosOptions: ['defaultToSpeaker'],
 });
+
+
 const recorder = new AudioRecorder();
 
 // set up recording output specs
 recorder.enableFileOutput({
-  channelCount: 1,
+  channelCount: 2,
   format: FileFormat.Wav,
 });
 
-function denoiseBuffer(inputBuffer: AudioBuffer | null, context: AudioContext): AudioBuffer {
-  if (inputBuffer === null) {
+function denoiseBuffer(input: AudioBuffer | null, context: AudioContext): AudioBuffer {
+  if (input === null) {
     // TODO: implement
     throw "buffer is null";
   }
-  const sampleRate = inputBuffer.sampleRate;
-  const length = inputBuffer.length;
+  const numChannels = input.numberOfChannels;
+  const sampleRate = input.sampleRate;
+  const length = input.length;
   // add 0s to the end of the file to ensure clean windows
   const padding = length % FRAME_SIZE;
   // buffer to hold audioBuffer
-  const audioBuffer = context.createBuffer(1, length + padding, sampleRate);
-  audioBuffer.copyToChannel(inputBuffer.getChannelData(0), 0);
-  const outputBuffer = context.createBuffer(1, length + padding, sampleRate);
+  const audioBuffer = context.createBuffer(numChannels, length + padding, sampleRate);
+
+  for (let c = 0; c < numChannels; c++) {
+    audioBuffer.copyToChannel(input.getChannelData(c), c);
+  }
+  const output = context.createBuffer(numChannels, length + padding, sampleRate);
 
   var frame = new Float32Array(FRAME_SIZE);
 
@@ -41,28 +47,30 @@ function denoiseBuffer(inputBuffer: AudioBuffer | null, context: AudioContext): 
 
   console.log("denoising file");
 
-  // iterate through frames
-  for (let i = 0; i < length; i += FRAME_SIZE) {
-    // slice FRAME_SIZE samples from the audioBuffer buffer into a number[], process with turbomodule, and write into Float32Array
-    // TODO : refactor into less than 80 columns                            | <-- 80 columns
-    frame.set(SampleTurboModule.rnnoise_process_frame_wrapper(Array.from(audioBuffer.getChannelData(0).slice(i, i + FRAME_SIZE))), 0);
-    // write to output buffer
-    // TODO: same buffer for audioBuffer and output should work but doesn't for some reason
-    outputBuffer.copyToChannel(frame, 0, i);
+  // iterate through frames for both channels
+  for (let c = 0; c < numChannels; c++) {
+    for (let i = 0; i < length; i += FRAME_SIZE) {
+      // slice FRAME_SIZE samples from the audioBuffer buffer into a number[], process with turbomodule, and write into Float32Array
+      // TODO : refactor into less than 80 columns                            | <-- 80 columns
+      frame.set(SampleTurboModule.rnnoise_process_frame_wrapper(Array.from(audioBuffer.getChannelData(c).slice(i, i + FRAME_SIZE))));
+      // write to output buffer
+      // TODO: same buffer for audioBuffer and output should work but doesn't for some reason
+      output.copyToChannel(frame, c, i);
+    }
   }
   // free model
   SampleTurboModule.rnnoise_destroy_wrapper();
   console.log("file denoised");
 
-  return outputBuffer;
+  return output;
 }
 
-function playBuffer(playbackBuffer: AudioBuffer | null, context: AudioContext) {
-  if (playbackBuffer === null) throw ("buffer is null");
-  console.log("context:", context.state);
-  console.log("playbackBuffer:  ", playbackBuffer);
+async function playBuffer(audioBuffer: AudioBuffer | null, context: AudioContext) {
+  if (audioBuffer === null) throw ("buffer is null");
+
+  await context.resume();
   const playerNode = context.createBufferSource();
-  playerNode.buffer = playbackBuffer;
+  playerNode.buffer = audioBuffer;
   playerNode.connect(context.destination);
   console.log("playback started");
 
@@ -72,13 +80,13 @@ function playBuffer(playbackBuffer: AudioBuffer | null, context: AudioContext) {
 export default function App() {
   // TODO : implement nice colorscheme stuff
   //const colorScheme = useColorScheme();
-  //let audioBuffer: AudioBuffer;
 
   const context = new AudioContext(
     { sampleRate: SAMPLE_RATE });
 
   const [isRecording, setIsRecording] = useState(false);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
+
 
   const startRecording = async () => {
     if (isRecording) {
