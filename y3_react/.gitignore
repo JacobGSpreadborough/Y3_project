@@ -15,6 +15,13 @@ ios/Pods/
 # Metro
 .metro-health-check*
 
+# CocoaPods vendor
+ios/vendor/
+
+# Ruby bundler vendor
+vendor/bundle/
+vendor/cache/
+
 # Misc
 .DS_Store
 *.log
