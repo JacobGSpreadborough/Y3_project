@@ -23,18 +23,16 @@ std::string NativeSampleModule::rnnoise_checkhealth(jsi::Runtime& rt) {
   int frameSize = rnnoise_get_frame_size();
   return "size: " + std::to_string(size) + "\n" + "frame size: " + std::to_string(frameSize) + "\n";
 }
+/*
+void NativeSampleModule::foo(jsi::Runtime& rt, jsi::ArrayBuffer input) {
+
+}
+*/
 std::vector<float> NativeSampleModule::rnnoise_process_frame_wrapper(jsi::Runtime& rt, std::vector<float> input) {
-  // scale from [-1,1] to [-32768,32767]
   if(input.size() != FRAME_SIZE) return input;
-  for(int i=0;i<FRAME_SIZE;i++) {
-    input[i] = input[i] * 32767;
-  }
 
   rnnoise_process_frame(st, input.data(), input.data());
   // scale data back down, using same vector for input and output
-  for(int i=0;i<FRAME_SIZE;i++) {
-    input[i] = input[i] / 32767;
-  }
 
   return input;
 }
