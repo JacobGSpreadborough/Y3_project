@@ -16,21 +16,32 @@ AudioManager.setAudioSessionOptions({
 
 const recorder = new AudioRecorder();
 
+// create and full array to smooth out frames being sent to output buffer
+const hann = Array<number>(FRAME_SIZE);
+for (let i = 0; i < FRAME_SIZE; i++) {
+  hann[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (FRAME_SIZE - 1)));
+}
+
+// convert and scale [-1,1] TypedArray to [-32767, 32768] Array
 function Float32ArrayToNumberArray(input: Float32Array, output: Array<number>) {
   if (input.length !== output.length) {
+    console.warn("If you just pressed 'stop playback' you can safely ignore this error");
     console.error("Incompatible lengths of input: ", input.length, "output: ", output.length);
   }
   for (let i = 0; i < input.length; i++) {
-    output[i] = input[i] * 32768;
+    output[i] = (input[i] * 32768);
   }
 }
 
+// convert and scale [-32767, 32768] Array to [-1,1] TypedArray
+// also adds Hanning window to minimize clicks between windows
 function NumberArrayToFloat32Array(input: Array<number>, output: Float32Array) {
   if (input.length !== output.length) {
+    console.warn("If you just pressed 'stop playback' you can safely ignore this error");
     console.error("Incompatible lengths of input: ", input.length, "output: ", output.length);
   }
   for (let i = 0; i < input.length; i++) {
-    output[i] = input[i] / 32768;
+    output[i] = (input[i] / 32768) * hann[i];
   }
 }
 
