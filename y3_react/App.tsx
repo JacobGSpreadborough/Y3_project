@@ -1,11 +1,12 @@
 // App.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Button, Text, useColorScheme, Pressable } from 'react-native';
-import { AudioContext, AudioRecorder, AudioManager, FileFormat, AudioBuffer } from 'react-native-audio-api';
+import { AudioContext, AudioRecorder, AudioManager, AudioBuffer } from 'react-native-audio-api';
 import SampleTurboModule from './specs/NativeSampleModule';
 
 const FRAME_SIZE = 480;
 const SAMPLE_RATE = 48_000;
+const CHANNEL_COUNT = 1;
 
 AudioManager.setAudioSessionOptions({
   iosCategory: 'playAndRecord',
@@ -13,15 +14,25 @@ AudioManager.setAudioSessionOptions({
   iosOptions: [],
 });
 
-
 const recorder = new AudioRecorder();
 
+function Float32ArrayToNumberArray(input: Float32Array, output: Array<number>) {
+  if (input.length !== output.length) {
+    console.error("Incompatible lengths of input: ", input.length, "output: ", output.length);
+  }
+  for (let i = 0; i < input.length; i++) {
+    output[i] = input[i] * 32768;
+  }
+}
 
-// set up recording output specs
-recorder.enableFileOutput({
-  channelCount: 2,
-  format: FileFormat.Wav,
-});
+function NumberArrayToFloat32Array(input: Array<number>, output: Float32Array) {
+  if (input.length !== output.length) {
+    console.error("Incompatible lengths of input: ", input.length, "output: ", output.length);
+  }
+  for (let i = 0; i < input.length; i++) {
+    output[i] = input[i] / 32768;
+  }
+}
 
 export default function App() {
   // TODO : implement nice colorscheme stuff
@@ -33,20 +44,24 @@ export default function App() {
   }
 
   const audioBufferQueue = context.current.createBufferQueueSource({ pitchCorrection: false });
-  const frame = context.current.createBuffer(2, 480, 48_000);
+  const tempNumber = new Array<number>(FRAME_SIZE);
+  const tempFloat32 = new Float32Array(FRAME_SIZE);
+  const frame = context.current.createBuffer(CHANNEL_COUNT, FRAME_SIZE, SAMPLE_RATE);
   // callback for processing data from microphone
   useEffect(() => {
     recorder.onAudioReady(
       {
-        sampleRate: 48_000,
-        bufferLength: 480, // 0.1s of audio each batch
-        channelCount: 2,
+        sampleRate: SAMPLE_RATE,
+        bufferLength: FRAME_SIZE, // 10ms windows
+        channelCount: CHANNEL_COUNT,
       },
       ({ buffer }) => {
-        console.log("frame size: ", buffer.length);
         for (let c = 0; c < buffer.numberOfChannels; c++) {
-          const temp = new Float32Array(SampleTurboModule.rnnoise_process_frame_wrapper(Array.from(buffer.getChannelData(c))));
-          frame.copyToChannel(temp, c);
+          // convert and prepare data
+          Float32ArrayToNumberArray(buffer.getChannelData(c), tempNumber);
+          // process data, convert and prepare for queueing
+          NumberArrayToFloat32Array(SampleTurboModule.rnnoise_process_frame_wrapper(tempNumber), tempFloat32);
+          frame.copyToChannel(tempFloat32, c);
         }
         audioBufferQueue.enqueueBuffer(frame);
       }
@@ -58,8 +73,6 @@ export default function App() {
   }, []);
 
   const [isRecording, setIsRecording] = useState(false);
-  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
-
 
   const startRecording = async () => {
     if (isRecording) {
@@ -118,7 +131,7 @@ export default function App() {
   return (
     <View style={{ flex: 1, justifyContent: 'space-evenly', alignItems: 'center' }}>
       <Pressable onPress={isRecording ? stopRecording : startRecording}>
-        <Text>{isRecording ? "Stop" : "Start Recording"} </Text>
+        <Text>{isRecording ? "Stop" : "Start Playback"} </Text>
       </Pressable>
     </View>
   );
