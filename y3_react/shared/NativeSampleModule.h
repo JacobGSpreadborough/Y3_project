@@ -18,7 +18,6 @@ public:
   std::vector<float> rnnoise_process_frame_wrapper(jsi::Runtime& rt, std::vector<float> input);
   void rnnoise_init_wrapper(jsi::Runtime& rt);
   void rnnoise_destroy_wrapper(jsi::Runtime& rt);
-//  void foo(jsi::Runtime& rt, jsi::ArrayBuffer input);
   std::string rnnoise_checkhealth(jsi::Runtime& rt);
 };
 

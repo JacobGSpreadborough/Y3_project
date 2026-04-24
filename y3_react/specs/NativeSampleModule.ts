@@ -5,7 +5,6 @@ export interface Spec extends TurboModule {
 	readonly rnnoise_init_wrapper: () => void;
 	readonly rnnoise_destroy_wrapper: () => void;
 	readonly rnnoise_checkhealth: () => string;
-	//	readonly foo: (input: ArrayBuffer) => void;
 }
 
 
