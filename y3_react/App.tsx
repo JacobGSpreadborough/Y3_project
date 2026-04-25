@@ -1,12 +1,15 @@
 // App.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Button, Text, useColorScheme, Pressable } from 'react-native';
-import { AudioContext, AudioRecorder, AudioManager } from 'react-native-audio-api';
+import { AudioContext, AudioRecorder, AudioManager, AudioBuffer, AudioBufferQueueSourceNode } from 'react-native-audio-api';
 import SampleTurboModule from './specs/NativeSampleModule';
 
 const FRAME_SIZE = 480;
+const OVERLAP = 0.5;
+const HOP_SIZE = Math.floor(FRAME_SIZE * (1 - OVERLAP));
 const SAMPLE_RATE = 48_000;
 const CHANNEL_COUNT = 1;
+const MAX_AMPLITUDE = 32768;
 
 AudioManager.setAudioSessionOptions({
   iosCategory: 'playAndRecord',
@@ -15,36 +18,6 @@ AudioManager.setAudioSessionOptions({
 });
 
 const recorder = new AudioRecorder();
-
-// create and full array to smooth out frames being sent to output buffer
-const hann = Array<number>(FRAME_SIZE);
-for (let i = 0; i < FRAME_SIZE; i++) {
-  hann[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (FRAME_SIZE - 1)));
-}
-
-// convert and scale [-1,1] TypedArray to [-32767, 32768] Array
-// also adds Hanning window to minimize clicks between windows
-function Float32ArrayToNumberArray(input: Float32Array, output: Array<number>) {
-  if (input.length !== output.length) {
-    console.warn("If you just pressed 'stop playback' you can safely ignore this error");
-    console.error("Incompatible lengths of input: ", input.length, "output: ", output.length);
-  }
-  for (let i = 0; i < input.length; i++) {
-    output[i] = (input[i] * 32768) * hann[i];
-  }
-}
-
-// convert and scale [-32767, 32768] Array to [-1,1] TypedArray
-// also adds Hanning window to minimize clicks between windows
-function NumberArrayToFloat32Array(input: Array<number>, output: Float32Array) {
-  if (input.length !== output.length) {
-    console.warn("If you just pressed 'stop playback' you can safely ignore this error");
-    console.error("Incompatible lengths of input: ", input.length, "output: ", output.length);
-  }
-  for (let i = 0; i < input.length; i++) {
-    output[i] = (input[i] / 32768) * hann[i];
-  }
-}
 
 export default function App() {
   // TODO : implement nice colorscheme stuff
@@ -55,39 +28,74 @@ export default function App() {
     context.current = new AudioContext({ sampleRate: SAMPLE_RATE });
   }
 
+  var audioBufferQueue = useRef<AudioBufferQueueSourceNode | null>(null);
+  if (!audioBufferQueue.current) {
+    audioBufferQueue.current = context.current.createBufferQueueSource();
+  }
+
   useEffect(() => {
 
     if (context.current === null) { return }
-    const audioBufferQueue = context.current.createBufferQueueSource({ pitchCorrection: false });
-    audioBufferQueue.connect(context.current.destination);
-    audioBufferQueue.start();
-    const tempNumber = new Array<number>(FRAME_SIZE);
-    const tempFloat32 = new Float32Array(FRAME_SIZE);
-    const frame = context.current.createBuffer(CHANNEL_COUNT, FRAME_SIZE, SAMPLE_RATE);
+    if (audioBufferQueue.current === null) { return }
+    audioBufferQueue.current.connect(context.current.destination);
+    audioBufferQueue.current.start();
+
+    const raw = new Array<number>(HOP_SIZE);
+    var overlap = new Array<number>(HOP_SIZE).fill(0);
+    var tail = new Array<number>(HOP_SIZE).fill(0);
+    var currentFrame = new Array<number>(FRAME_SIZE);
+    var tempFloat32 = new Float32Array(HOP_SIZE);
+    var frame = context.current.createBuffer(CHANNEL_COUNT, HOP_SIZE, SAMPLE_RATE);
+
     // callback for processing data from microphone
     recorder.onAudioReady(
       {
         sampleRate: SAMPLE_RATE,
-        bufferLength: FRAME_SIZE, // 10ms windows
+        bufferLength: HOP_SIZE,
         channelCount: CHANNEL_COUNT,
       },
       ({ buffer }) => {
         for (let c = 0; c < buffer.numberOfChannels; c++) {
-          // convert and prepare data
-          Float32ArrayToNumberArray(buffer.getChannelData(c), tempNumber);
-          // process data, convert and prepare for queueing
-          NumberArrayToFloat32Array(SampleTurboModule.rnnoise_process_frame_wrapper(tempNumber), tempFloat32);
+          for (let i = 0; i < HOP_SIZE; i++) {
+            // convert from Float32Array to Array<number> and scale to [-32767, 32768]
+            raw[i] = buffer.getChannelData(c)[i] * MAX_AMPLITUDE;
+            // combine overlap from last hop with data from this one
+            currentFrame[i] = overlap[i];
+            // store new data to overlap with next hop
+            overlap[i] = raw[i];
+          }
+          // finish populating the current frame
+          for (let i = HOP_SIZE; i < FRAME_SIZE; i++) {
+            currentFrame[i] = raw[i - HOP_SIZE];
+          }
+
+          // process current frame
+          currentFrame = SampleTurboModule.rnnoise_process_frame_wrapper(currentFrame);
+
+          for (let i = 0; i < HOP_SIZE; i++) {
+            // add previous tail to this frame
+            currentFrame[i] += tail[i];
+            // store new tail for next hop
+            tail[i] = currentFrame[HOP_SIZE + i];
+            //convert to format suitable for playback
+            tempFloat32[i] = currentFrame[i] / MAX_AMPLITUDE;
+          }
+
+          // prepare for playback
           frame.copyToChannel(tempFloat32, c);
         }
-        audioBufferQueue.enqueueBuffer(frame);
+        // send to queue
+        if (audioBufferQueue.current !== null) {
+          audioBufferQueue.current.enqueueBuffer(frame);
+        }
       }
     );
 
     return () => {
-      recorder.clearOnAudioReady();
-      audioBufferQueue.stop();
-      audioBufferQueue.disconnect();
-      audioBufferQueue.clearBuffers();
+      if (audioBufferQueue.current !== null) {
+        recorder.clearOnAudioReady();
+        audioBufferQueue.current.clearBuffers();
+      }
     };
   }, []);
 
@@ -117,6 +125,11 @@ export default function App() {
     // create denoise model before just in case
     SampleTurboModule.rnnoise_init_wrapper();
     const result = recorder.start();
+    // preload 1 second of silence to prevent underrun
+    if (context.current !== null) {
+      const silence = context.current.createBuffer(CHANNEL_COUNT, FRAME_SIZE * 10, SAMPLE_RATE)
+      audioBufferQueue.current?.enqueueBuffer(silence);
+    }
     if (result.status === 'error') {
       SampleTurboModule.rnnoise_destroy_wrapper();
       console.warn(result.message);
@@ -136,6 +149,7 @@ export default function App() {
     SampleTurboModule.rnnoise_destroy_wrapper();
     console.log(result);
     if (result.status === 'success') {
+      audioBufferQueue.current?.clearBuffers();
       setIsRecording(false);
       await AudioManager.setAudioSessionActivity(false);
     }
