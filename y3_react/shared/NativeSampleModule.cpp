@@ -23,11 +23,20 @@ std::string NativeSampleModule::rnnoise_checkhealth(jsi::Runtime& rt) {
   int frameSize = rnnoise_get_frame_size();
   return "size: " + std::to_string(size) + "\n" + "frame size: " + std::to_string(frameSize) + "\n";
 }
-std::vector<float> NativeSampleModule::rnnoise_process_frame_wrapper(jsi::Runtime& rt, std::vector<float> input) {
+std::vector<float> NativeSampleModule::rnnoise_process_frame_wrapper(jsi::Runtime& rt, std::vector<float> input, std::string status) {
   if(input.size() != FRAME_SIZE) return input;
-
+  if(status == "raw") {
+    for(int i=0;i<FRAME_SIZE;i++){
+      input[i] *= 32768.0f;
+    }
+  }
   rnnoise_process_frame(st, input.data(), input.data());
 
+  if(status == "raw") {
+    for(int i=0;i<FRAME_SIZE;i++){
+      input[i] /= 32768.0f;
+    }
+  }
   return input;
 }
 

@@ -1,8 +1,10 @@
 // (tabs)/FileView.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Button, Text, useColorScheme, Pressable, StyleSheet } from 'react-native';
+import { View, Button, Text, useColorScheme, Pressable } from 'react-native';
 import { AudioContext, AudioRecorder, AudioManager, FileFormat, AudioBuffer } from 'react-native-audio-api';
 import SampleTurboModule from '../specs/NativeSampleModule';
+import { styles } from '../styles.js';
+import { timeFormatter } from '../utils';
 
 const FRAME_SIZE = 480;
 const SAMPLE_RATE = 48_000;
@@ -24,7 +26,6 @@ recorder.enableFileOutput({
 
 function denoiseBuffer(input: AudioBuffer | null, context: AudioContext): AudioBuffer {
   if (input === null) {
-    // TODO: implement
     throw "buffer is null";
   }
   const numChannels = input.numberOfChannels;
@@ -52,7 +53,7 @@ function denoiseBuffer(input: AudioBuffer | null, context: AudioContext): AudioB
     for (let i = 0; i < length; i += FRAME_SIZE) {
       // slice FRAME_SIZE samples from the audioBuffer buffer into a number[], process with turbomodule, and write into Float32Array
       // TODO : refactor into less than 80 columns                            | <-- 80 columns
-      frame.set(SampleTurboModule.rnnoise_process_frame_wrapper(Array.from(audioBuffer.getChannelData(c).slice(i, i + FRAME_SIZE))));
+      frame.set(SampleTurboModule.rnnoise_process_frame_wrapper(Array.from(audioBuffer.getChannelData(c).slice(i, i + FRAME_SIZE)), "raw"));
       // write to output buffer
       // TODO: same buffer for audioBuffer and output should work but doesn't for some reason
       output.copyToChannel(frame, c, i);
@@ -80,7 +81,6 @@ async function playBuffer(audioBuffer: AudioBuffer | null, context: AudioContext
 export default function FileView() {
   // TODO : implement nice colorscheme stuff
   //const colorScheme = useColorScheme();
-
   const context = new AudioContext(
     { sampleRate: SAMPLE_RATE });
 
@@ -88,6 +88,18 @@ export default function FileView() {
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const [playbackReady, setPlaybackReady] = useState(false);
   const [status, setStatus] = useState("Press 'Start Recording' to begin");
+  const [recordDuration, setRecordDuration] = useState(timeFormatter(0));
+
+  useEffect(() => {
+    if (!isRecording) return;
+    var recordInterval = setInterval(() => {
+      console.log("updating UI timer"); setRecordDuration(timeFormatter(recorder.getCurrentDuration()));
+    }, 500);
+    return (() => {
+      console.log("clearing interval");
+      clearInterval(recordInterval);
+    });
+  }, [isRecording]);
 
   const startRecording = async () => {
     if (isRecording) {
@@ -143,38 +155,27 @@ export default function FileView() {
   return (
     <View style={{ flex: 1, justifyContent: 'space-evenly', alignItems: 'center' }}>
       <Text>{status}</Text>
-      <Pressable onPress={isRecording ? stopRecording : startRecording}
+      <Pressable
+        onPress={isRecording ? stopRecording : startRecording}
         style={styles.pressableButton}>
-        <Text style={styles.buttonText}>{isRecording ? "Stop" : "Start Recording"}</Text>
+        <Text
+          style={styles.buttonText}>
+          {isRecording ? "Stop" : "Start Recording"}
+        </Text>
       </Pressable>
-      <Pressable style={playbackReady ? styles.pressableButton : styles.nonPressableButton} onPress={() => playBuffer(audioBuffer, context)} disabled={!playbackReady}>
-        <Text style={playbackReady ? styles.buttonText : styles.nonPressableButtonText}>Play</Text>
+      <Text
+        style={styles.numbers}>
+        Duration: {recordDuration}
+      </Text>
+      <Pressable
+        style={playbackReady ? styles.pressableButton : styles.nonPressableButton}
+        onPress={() => playBuffer(audioBuffer, context)} disabled={!playbackReady}>
+        <Text
+          style={playbackReady ? styles.buttonText : styles.nonPressableButtonText}>
+          Play
+        </Text>
       </Pressable>
-    </View>
+    </View >
   );
 }
 
-const styles = StyleSheet.create({
-  pressableButton: {
-    justifyContent: 'center',
-    backgroundColor: "#FFFFFF",
-    height: 40,
-    width: 150,
-    borderRadius: 100,
-    alignItems: 'center',
-  },
-  nonPressableButton: {
-    justifyContent: 'center',
-    backgroundColor: "#EEEEEE",
-    height: 40,
-    width: 150,
-    borderRadius: 100,
-    alignItems: 'center',
-  },
-  nonPressableButtonText: {
-    color: "#AAAAAA",
-  },
-  buttonText: {
-    color: "#007AFF",
-  }
-});

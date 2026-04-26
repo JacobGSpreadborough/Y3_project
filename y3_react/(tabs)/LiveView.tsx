@@ -1,8 +1,9 @@
-// App.tsx
+// (tabs)/LiveView.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Button, Text, useColorScheme, Pressable } from 'react-native';
 import { AudioContext, AudioRecorder, AudioManager, AudioBuffer, AudioBufferQueueSourceNode } from 'react-native-audio-api';
-import SampleTurboModule from './specs/NativeSampleModule';
+import SampleTurboModule from '../specs/NativeSampleModule';
+import { styles } from '../styles';
 
 const FRAME_SIZE = 480;
 const OVERLAP = 0.5;
@@ -70,7 +71,7 @@ export default function App() {
           }
 
           // process current frame
-          currentFrame = SampleTurboModule.rnnoise_process_frame_wrapper(currentFrame);
+          currentFrame = SampleTurboModule.rnnoise_process_frame_wrapper(currentFrame, "processed");
 
           for (let i = 0; i < HOP_SIZE; i++) {
             // add previous tail to this frame
@@ -159,8 +160,8 @@ export default function App() {
 
   return (
     <View style={{ flex: 1, justifyContent: 'space-evenly', alignItems: 'center' }}>
-      <Pressable onPress={isRecording ? stopRecording : startRecording}>
-        <Text>{isRecording ? "Stop" : "Start Playback"} </Text>
+      <Pressable style={styles.pressableButton} onPress={isRecording ? stopRecording : startRecording}>
+        <Text style={styles.buttonText}>{isRecording ? "Stop" : "Start Playback"} </Text>
       </Pressable>
     </View>
   );

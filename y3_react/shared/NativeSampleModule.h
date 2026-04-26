@@ -15,7 +15,7 @@ private:
 public:
   NativeSampleModule(std::shared_ptr<CallInvoker> jsInvoker);
 
-  std::vector<float> rnnoise_process_frame_wrapper(jsi::Runtime& rt, std::vector<float> input);
+  std::vector<float> rnnoise_process_frame_wrapper(jsi::Runtime& rt, std::vector<float> input, std::string status);
   void rnnoise_init_wrapper(jsi::Runtime& rt);
   void rnnoise_destroy_wrapper(jsi::Runtime& rt);
   std::string rnnoise_checkhealth(jsi::Runtime& rt);
