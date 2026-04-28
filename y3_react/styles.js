@@ -26,4 +26,8 @@ export const styles = StyleSheet.create({
   numbers: {
     fontVariant: ['tabular-nums'],
   },
+  text: {
+    alignContent: 'center',
+    justifyContent: 'center',
+  },
 });

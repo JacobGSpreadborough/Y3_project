@@ -6,19 +6,31 @@ import SampleTurboModule from '../specs/NativeSampleModule';
 import { styles } from '../styles';
 
 const FRAME_SIZE = 480;
-const OVERLAP = 0.5;
-const HOP_SIZE = Math.floor(FRAME_SIZE * (1 - OVERLAP));
 const SAMPLE_RATE = 48_000;
 const CHANNEL_COUNT = 1;
 const MAX_AMPLITUDE = 32768;
+const RAMP_TIME = 0.005; // 5ms ramp
+const RAMP_SAMPLES = SAMPLE_RATE * RAMP_TIME;
 
 AudioManager.setAudioSessionOptions({
   iosCategory: 'playAndRecord',
   iosMode: 'default',
-  iosOptions: ['defaultToSpeaker'],
+  iosOptions: [],
 });
 
 const recorder = new AudioRecorder();
+
+var startTime = 0;
+var totalFrameTime = 0;
+var frameCount = 0;
+
+const window = Array<number>(FRAME_SIZE).fill(1);
+for (let i = 0; i < RAMP_SAMPLES; i++) {
+  window[i] = i / RAMP_SAMPLES;
+}
+for (let i = FRAME_SIZE - RAMP_SAMPLES; i < FRAME_SIZE; i++) {
+  window[i] = (FRAME_SIZE - i) / RAMP_SAMPLES
+}
 
 export default function App() {
   // TODO : implement nice colorscheme stuff
@@ -34,6 +46,8 @@ export default function App() {
     audioBufferQueue.current = context.current.createBufferQueueSource();
   }
 
+  const [averageFrameTime, setAverageFrameTime] = useState(0);
+
   useEffect(() => {
 
     if (context.current === null) { return }
@@ -41,54 +55,39 @@ export default function App() {
     audioBufferQueue.current.connect(context.current.destination);
     audioBufferQueue.current.start();
 
-    const raw = new Array<number>(HOP_SIZE);
-    var overlap = new Array<number>(HOP_SIZE).fill(0);
-    var tail = new Array<number>(HOP_SIZE).fill(0);
-    var currentFrame = new Array<number>(FRAME_SIZE);
-    var tempFloat32 = new Float32Array(HOP_SIZE);
-    var frame = context.current.createBuffer(CHANNEL_COUNT, HOP_SIZE, SAMPLE_RATE);
+    var raw = new Array<number>(FRAME_SIZE);
+    const tempFloat32 = new Float32Array(FRAME_SIZE);
+    const frame = context.current.createBuffer(CHANNEL_COUNT, FRAME_SIZE, SAMPLE_RATE);
 
     // callback for processing data from microphone
     recorder.onAudioReady(
       {
         sampleRate: SAMPLE_RATE,
-        bufferLength: HOP_SIZE,
+        bufferLength: FRAME_SIZE,
         channelCount: CHANNEL_COUNT,
       },
       ({ buffer }) => {
+        startTime = Date.now();
         for (let c = 0; c < buffer.numberOfChannels; c++) {
-          for (let i = 0; i < HOP_SIZE; i++) {
-            // convert from Float32Array to Array<number> and scale to [-32767, 32768]
+          // convert from TypedArray to Array and scale
+          for (let i = 0; i < FRAME_SIZE; i++) {
             raw[i] = buffer.getChannelData(c)[i] * MAX_AMPLITUDE;
-            // combine overlap from last hop with data from this one
-            currentFrame[i] = overlap[i];
-            // store new data to overlap with next hop
-            overlap[i] = raw[i];
           }
-          // finish populating the current frame
-          for (let i = HOP_SIZE; i < FRAME_SIZE; i++) {
-            currentFrame[i] = raw[i - HOP_SIZE];
+          // process
+          raw = SampleTurboModule.rnnoise_process_frame_wrapper(raw, "processed");
+          // convert back and scale down
+          for (let i = 0; i < FRAME_SIZE; i++) {
+            tempFloat32[i] = (raw[i] / MAX_AMPLITUDE) * window[i];
           }
-
-          // process current frame
-          currentFrame = SampleTurboModule.rnnoise_process_frame_wrapper(currentFrame, "processed");
-
-          for (let i = 0; i < HOP_SIZE; i++) {
-            // add previous tail to this frame
-            currentFrame[i] += tail[i];
-            // store new tail for next hop
-            tail[i] = currentFrame[HOP_SIZE + i];
-            //convert to format suitable for playback
-            tempFloat32[i] = currentFrame[i] / MAX_AMPLITUDE;
-          }
-
-          // prepare for playback
+          // prepare for queueing
           frame.copyToChannel(tempFloat32, c);
         }
+        frameCount++;
         // send to queue
         if (audioBufferQueue.current !== null) {
           audioBufferQueue.current.enqueueBuffer(frame);
         }
+        totalFrameTime += (Date.now() - startTime);
       }
     );
 
@@ -126,17 +125,11 @@ export default function App() {
     // create denoise model before just in case
     SampleTurboModule.rnnoise_init_wrapper();
     const result = recorder.start();
-    // preload 1 second of silence to prevent underrun
-    if (context.current !== null) {
-      const silence = context.current.createBuffer(CHANNEL_COUNT, FRAME_SIZE * 10, SAMPLE_RATE)
-      audioBufferQueue.current?.enqueueBuffer(silence);
-    }
     if (result.status === 'error') {
       SampleTurboModule.rnnoise_destroy_wrapper();
       console.warn(result.message);
       return;
     }
-
     console.log('Recording started');
     setIsRecording(true);
   }
@@ -147,6 +140,7 @@ export default function App() {
     }
 
     const result = recorder.stop();
+    setAverageFrameTime(totalFrameTime / frameCount);
     SampleTurboModule.rnnoise_destroy_wrapper();
     console.log(result);
     if (result.status === 'success') {
@@ -163,6 +157,8 @@ export default function App() {
       <Pressable style={styles.pressableButton} onPress={isRecording ? stopRecording : startRecording}>
         <Text style={styles.buttonText}>{isRecording ? "Stop" : "Start Playback"} </Text>
       </Pressable>
+      <Text style={styles.numbers}>Frames Processed: {frameCount}</Text>
+      <Text style={styles.numbers}>{averageFrameTime}</Text>
     </View>
   );
 }
