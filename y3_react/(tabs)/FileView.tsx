@@ -85,8 +85,10 @@ export default function FileView() {
     { sampleRate: SAMPLE_RATE });
 
   const [isRecording, setIsRecording] = useState(false);
-  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
+  const [denoisedBuffer, setDenoisedBuffer] = useState<AudioBuffer | null>(null);
+  const [rawBuffer, setRawBuffer] = useState<AudioBuffer | null>(null);
   const [playbackReady, setPlaybackReady] = useState(false);
+  const [isDenoised, setIsDenoised] = useState(false);
   const [status, setStatus] = useState("Press 'Start Recording' to begin");
   const [recordDuration, setRecordDuration] = useState(timeFormatter(0));
 
@@ -131,6 +133,7 @@ export default function FileView() {
     console.log('Recording started');
     setStatus("Recording");
     setPlaybackReady(false);
+    setIsDenoised(false);
     setIsRecording(true);
   }
 
@@ -138,23 +141,30 @@ export default function FileView() {
     if (!isRecording) {
       return;
     }
-
+    var startTime: number;
+    var endTime: number;
     const result = recorder.stop();
     console.log(result);
     if (result.status === 'success') {
-      setStatus("Processing...");
       setIsRecording(false);
       await AudioManager.setAudioSessionActivity(false);
+      setStatus("Decoding data...");
       const decoded = await context.decodeAudioData(result.path);
-      setAudioBuffer(denoiseBuffer(decoded, context))
-      setStatus("Ready for playback");
+      setRawBuffer(decoded);
       setPlaybackReady(true);
+      setStatus("Processing...");
+      startTime = Date.now();
+      setDenoisedBuffer(denoiseBuffer(decoded, context))
+      endTime = Date.now();
+      setStatus("Ready for Playback\nDenoising took " + (endTime - startTime) / 1000 + " seconds\nAverage of " + (endTime - startTime) / (decoded.length / FRAME_SIZE) + " milliseconds per frame"
+      );
+      setIsDenoised(true);
     }
   };
 
   return (
     <View style={{ flex: 1, justifyContent: 'space-evenly', alignItems: 'center' }}>
-      <Text>{status}</Text>
+      <Text style={styles.text}>{status}</Text>
       <Pressable
         onPress={isRecording ? stopRecording : startRecording}
         style={styles.pressableButton}>
@@ -169,10 +179,18 @@ export default function FileView() {
       </Text>
       <Pressable
         style={playbackReady ? styles.pressableButton : styles.nonPressableButton}
-        onPress={() => playBuffer(audioBuffer, context)} disabled={!playbackReady}>
+        onPress={() => playBuffer(rawBuffer, context)} disabled={!playbackReady}>
         <Text
           style={playbackReady ? styles.buttonText : styles.nonPressableButtonText}>
-          Play
+          Clean Audio
+        </Text>
+      </Pressable>
+      <Pressable
+        style={isDenoised ? styles.pressableButton : styles.nonPressableButton}
+        onPress={() => playBuffer(denoisedBuffer, context)} disabled={!isDenoised}>
+        <Text
+          style={isDenoised ? styles.buttonText : styles.nonPressableButtonText}>
+          Denoised Audio
         </Text>
       </Pressable>
     </View >
