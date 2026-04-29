@@ -11,6 +11,7 @@ const FRAME_SIZE = 480;
 const SAMPLE_RATE = 48_000;
 const CHANNEL_COUNT = 2;
 const CODEC = Codec.pcmFloat32WAV;
+var frameCount = 0;
 
 void main() {
   runApp(const MyApp());
@@ -34,12 +35,11 @@ Future<List<Float32List>> readWav(String path) async {
   final offset = dataChunkOffset(bytes);
   final channels = CHANNEL_COUNT;
   var samples = bytes.buffer.asFloat32List(offset);
-  final length = samples.length ~/ channels;
-  print(samples.length);
-  print(length);
-  print(length / SAMPLE_RATE);
-  final out = List.generate(channels, (_) => Float32List(length));
-  for (int i = 0; i < length; i++) {
+  final out = List.generate(
+    channels,
+    (_) => Float32List(samples.length ~/ channels),
+  );
+  for (int i = 0; i < samples.length; i++) {
     final channel = i % channels;
     final channelIndex = i ~/ channels;
     out[channel][channelIndex] = samples[i];
@@ -51,7 +51,6 @@ List<Float32List> denoiseBuffer(
   List<Float32List> input,
   List<Float32List> dest,
 ) {
-  print("denoising");
   // remove data that doesn't fit in a window, FIX: fix this later
   // we'll only lose <10 ms of data
   final frame = Float32List(FRAME_SIZE);
@@ -63,9 +62,9 @@ List<Float32List> denoiseBuffer(
       frame.setRange(0, FRAME_SIZE, input[c], i);
       Rnnoise.rnnoise_process_frame_wrapper(frame);
       dest[c].setRange(i, i + FRAME_SIZE, frame);
+      frameCount++;
     }
   }
-  print("denoising completed");
   return dest;
 }
 
@@ -94,22 +93,29 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final player = FlutterSoundPlayer();
   final recorder = FlutterSoundRecorder();
+  var recordingDataController = StreamController<List<Float32List>>();
   late List<Float32List> rawBuffer;
   late List<Float32List> denoisedBuffer;
-  StreamController<Food> playerController = StreamController<Food>();
   var filePath;
   bool _isRecording = false;
   bool _playbackReady = false;
   bool _denoisedReady = false;
+  bool _isStreaming = false;
+  String _status = "Try recording some audio";
+  var totalFrameTime = 0;
+  double averageFrameTime = 0;
+  final timer = Stopwatch();
 
-  void startRecording() async {
+  Future<void> recorderInit() async {
     var status = await Permission.microphone.request();
     if (status != PermissionStatus.granted) {
-      print("Permission status: $status");
       await openAppSettings();
       return;
     }
-    await recorder.openRecorder();
+  }
+
+  void startRecording() async {
+    await recorderInit();
     await recorder.startRecorder(
       sampleRate: SAMPLE_RATE,
       toFile: "recording.wav",
@@ -118,6 +124,7 @@ class _MyHomePageState extends State<MyHomePage> {
       audioSource: AudioSource.defaultSource,
     );
     setState(() {
+      _status = "Recording...";
       _isRecording = true;
     });
   }
@@ -127,18 +134,76 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _isRecording = false;
     });
-    print("recording saved to $filePath");
     rawBuffer = await readWav(filePath);
     setState(() {
+      _status = "Denoising...";
       _playbackReady = true;
     });
     denoisedBuffer = List<Float32List>.filled(
       2,
       Float32List(rawBuffer[0].length),
     );
+    frameCount = 0;
+    timer.reset();
+    timer.start();
     denoiseBuffer(rawBuffer, denoisedBuffer);
+    timer.stop();
     setState(() {
+      _status =
+          "Ready for playback, took ${timer.elapsedMilliseconds}ms, averaging ${timer.elapsedMilliseconds / frameCount}ms per frame";
       _denoisedReady = true;
+    });
+  }
+
+  void startStream() async {
+    await recorderInit();
+    recordingDataController.stream.listen((List<Float32List> buffer) {
+      for (int i = 0; i < buffer[0].length; i += FRAME_SIZE) {
+        timer.reset();
+        timer.start();
+        final int end = (i + FRAME_SIZE).clamp(0, buffer[0].length);
+        if (end - i < FRAME_SIZE) continue;
+        final List<Float32List> chunk = [
+          for (int c = 0; c < buffer.length; c++)
+            Float32List.sublistView(buffer[c], i, end),
+        ];
+        denoiseBuffer(chunk, chunk);
+        player.feedF32FromStream(chunk);
+        timer.stop();
+        frameCount++;
+        totalFrameTime += timer.elapsedMilliseconds;
+      }
+    });
+    await player.startPlayerFromStream(
+      codec: Codec.pcmFloat32,
+      interleaved: false,
+      numChannels: CHANNEL_COUNT,
+      sampleRate: SAMPLE_RATE,
+      bufferSize: FRAME_SIZE,
+    );
+    await recorder.startRecorder(
+      toStreamFloat32: recordingDataController.sink,
+      codec: Codec.pcmFloat32,
+      numChannels: CHANNEL_COUNT,
+      sampleRate: SAMPLE_RATE,
+      bufferSize: FRAME_SIZE,
+      audioSource: AudioSource.defaultSource,
+    );
+    setState(() {
+      _isStreaming = true;
+    });
+  }
+
+  void stopStream() {
+    recordingDataController.close();
+    player.stopPlayer();
+    recorder.stopRecorder();
+    setState(() {
+      _status =
+          "Average processing time per frame: ${averageFrameTime = totalFrameTime / frameCount}ms";
+    });
+    setState(() {
+      _isStreaming = false;
     });
   }
 
@@ -179,8 +244,8 @@ class _MyHomePageState extends State<MyHomePage> {
         androidWillPauseWhenDucked: true,
       ),
     );
-    print("opening player");
     await player.openPlayer();
+    await recorder.openRecorder();
   }
 
   @override
@@ -188,7 +253,6 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
 
     init();
-    print("initializing");
     Rnnoise.rnnoise_init_wrapper();
   }
 
@@ -210,8 +274,18 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Center(
         child: Column(
+          spacing: 30,
           mainAxisAlignment: .center,
           children: [
+            ElevatedButton(
+              onPressed: () {
+                _isStreaming ? stopStream() : startStream();
+              },
+              child: Text(
+                _isStreaming ? "Stop Live playback" : "Start Live playback",
+              ),
+            ),
+            Text(_status),
             ElevatedButton(
               onPressed: () {
                 _isRecording ? stopRecording() : startRecording();
