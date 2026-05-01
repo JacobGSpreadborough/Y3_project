@@ -12,7 +12,7 @@
 		4E60794A8F99CDB463AE7A0A /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
-		F69805742F96847B00D81E8B /* librnnoise.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F69805732F96847B00D81E8B /* librnnoise.a */; };
+		F6984DD32FA39292001CB09A /* librnnoise.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F6984DD02FA39292001CB09A /* librnnoise.a */; };
 		F6A51E5B2F9110C400CFC869 /* NativeSampleModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F6A51E592F9110C400CFC869 /* NativeSampleModule.cpp */; };
 		F6A51E5E2F9110ED00CFC869 /* NativeSampleModuleProvider.mm in Sources */ = {isa = PBXBuildFile; fileRef = F6A51E5D2F9110ED00CFC869 /* NativeSampleModuleProvider.mm */; };
 /* End PBXBuildFile section */
@@ -28,7 +28,8 @@
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = y3_react/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = y3_react/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F69805732F96847B00D81E8B /* librnnoise.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = librnnoise.a; sourceTree = "<group>"; };
+		F6984DD02FA39292001CB09A /* librnnoise.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = librnnoise.a; sourceTree = "<group>"; };
+		F6984DD12FA39292001CB09A /* rnnoise.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = rnnoise.h; sourceTree = "<group>"; };
 		F6A51E582F9110C400CFC869 /* NativeSampleModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NativeSampleModule.h; sourceTree = "<group>"; };
 		F6A51E592F9110C400CFC869 /* NativeSampleModule.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NativeSampleModule.cpp; sourceTree = "<group>"; };
 		F6A51E5C2F9110ED00CFC869 /* NativeSampleModuleProvider.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NativeSampleModuleProvider.h; sourceTree = "<group>"; };
@@ -40,7 +41,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F69805742F96847B00D81E8B /* librnnoise.a in Frameworks */,
+				F6984DD32FA39292001CB09A /* librnnoise.a in Frameworks */,
 				0C80B921A6F3F58F76C31292 /* libPods-y3_react.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -79,7 +80,6 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				F6F134572F97F42E00DB3EA4 /* rnnoise */,
 				F6A51E5C2F9110ED00CFC869 /* NativeSampleModuleProvider.h */,
 				F6A51E5D2F9110ED00CFC869 /* NativeSampleModuleProvider.mm */,
 				F6A51E5A2F9110C400CFC869 /* shared */,
@@ -111,23 +111,25 @@
 			path = Pods;
 			sourceTree = "<group>";
 		};
+		F6984DD22FA39292001CB09A /* rnnoise */ = {
+			isa = PBXGroup;
+			children = (
+				F6984DD02FA39292001CB09A /* librnnoise.a */,
+				F6984DD12FA39292001CB09A /* rnnoise.h */,
+			);
+			path = rnnoise;
+			sourceTree = "<group>";
+		};
 		F6A51E5A2F9110C400CFC869 /* shared */ = {
 			isa = PBXGroup;
 			children = (
+				F6984DD22FA39292001CB09A /* rnnoise */,
 				F6A51E582F9110C400CFC869 /* NativeSampleModule.h */,
 				F6A51E592F9110C400CFC869 /* NativeSampleModule.cpp */,
 			);
 			name = shared;
 			path = ../shared;
 			sourceTree = SOURCE_ROOT;
-		};
-		F6F134572F97F42E00DB3EA4 /* rnnoise */ = {
-			isa = PBXGroup;
-			children = (
-				F69805732F96847B00D81E8B /* librnnoise.a */,
-			);
-			path = rnnoise;
-			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
@@ -222,9 +224,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-y3_react/Pods-y3_react-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-y3_react/Pods-y3_react-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -261,9 +267,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-y3_react/Pods-y3_react-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-y3_react/Pods-y3_react-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -392,7 +402,8 @@
 					"\"$(PODS_ROOT)/Headers/Private/React-Core\"",
 					"\"$(PODS_ROOT)/Headers/Private/React-Core\"",
 					"\"$(PODS_ROOT)/Headers/Private/Yoga\"",
-					"\"$(PROJECT_DIR)/rnnoise\"",
+					"\"$(PROJECT_DIR)/../../shared/rnnoise\"",
+					"\"$(PROJECT_DIR)shared/rnnoise\"",
 				);
 				INFOPLIST_FILE = y3_react/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
@@ -599,7 +610,8 @@
 					"\"$(PODS_ROOT)/Headers/Private/React-Core\"",
 					"\"$(PODS_ROOT)/Headers/Private/React-Core\"",
 					"\"$(PODS_ROOT)/Headers/Private/Yoga\"",
-					"\"$(PROJECT_DIR)/rnnoise\"",
+					"\"$(PROJECT_DIR)/../../shared/rnnoise\"",
+					"\"$(PROJECT_DIR)shared/rnnoise\"",
 				);
 				INFOPLIST_FILE = y3_react/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
