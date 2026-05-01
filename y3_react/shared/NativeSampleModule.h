@@ -5,7 +5,7 @@
 
 #include <memory>
 #include <string>
-#include "rnnoise.h"
+#include "rnnoise/rnnoise.h"
 
 namespace facebook::react {
 

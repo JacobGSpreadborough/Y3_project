@@ -1,5 +1,5 @@
 #include "NativeSampleModule.h"
-#include "rnnoise.h"
+#include "rnnoise/rnnoise.h"
 #include <string>
 
 
